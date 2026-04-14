@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 
 // ── API Configuration ────────────────────────────────────────────────────────
-// const String kElevenLabsApiKey = '';
-// const String kElevenLabsVoiceId = 'pNInz6obpgDQGcFmaJgB'; // Adam (free tier)
-// const String kElevenLabsModelId = 'eleven_multilingual_v2';
+const String kElevenLabsApiKey = String.fromEnvironment('ELABS_API_KEY');
+const String kElevenLabsVoiceId = 'pNInz6obpgDQGcFmaJgB'; // Adam (free tier)
+const String kElevenLabsModelId = 'eleven_multilingual_v2';
 
-// const String kOllamaModel = 'qwen2:1.5b';
+const String kOpenAiApiKey = String.fromEnvironment('OPENAI_API_KEY');
 
-const String kGeminiApiKey = '';
+const String kOllamaHost = '192.168.100.60'; // Local machine running Ollama
+const String kOllamaModel = 'qwen2:1.5b';
+
+const String kGeminiApiKey = String.fromEnvironment('GEMINI_API_KEY');
 
 const int kMaxRecordingMinutes = 60;
 
