@@ -1,9 +1,0 @@
-# .gitignore
-.dart_tool/
-.packages
-build/
-ios/.generated/
-
-# Your secret config files
-config.json
-.env
