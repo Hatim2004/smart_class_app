@@ -10,7 +10,8 @@ import '../widgets/waveform_visualizer.dart';
 enum _Step { idle, recording, saving, done }
 
 class RecordScreen extends StatefulWidget {
-  const RecordScreen({super.key});
+  final UserRole role;
+  const RecordScreen({super.key, required this.role});
 
   @override
   State<RecordScreen> createState() => _RecordScreenState();
@@ -42,9 +43,10 @@ class _RecordScreenState extends State<RecordScreen>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
-    _pulseAnim = Tween(begin: 0.92, end: 1.08).animate(
-      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
-    );
+    _pulseAnim = Tween(
+      begin: 0.92,
+      end: 1.08,
+    ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
   }
 
   // ── Timer ──────────────────────────────────────────────────────────────────
@@ -132,12 +134,10 @@ class _RecordScreenState extends State<RecordScreen>
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  String _formatDate(DateTime d) =>
-      '${d.day}/${d.month}/${d.year}';
+  String _formatDate(DateTime d) => '${d.day}/${d.month}/${d.year}';
 
   void _showSnack(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   Future<String> _showTitleDialog() async {
@@ -162,11 +162,9 @@ class _RecordScreenState extends State<RecordScreen>
             child: const Text('تخطي'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             onPressed: () => Navigator.pop(ctx, ctrl.text),
-            child: const Text('حفظ',
-                style: TextStyle(color: Colors.white)),
+            child: const Text('حفظ', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -194,15 +192,31 @@ class _RecordScreenState extends State<RecordScreen>
         centerTitle: true,
         title: const Column(
           children: [
-            Text('تسجيل الحصة',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18)),
-            Text('حتى 60 دقيقة',
-                style: TextStyle(color: Color(0xFF90CAF9), fontSize: 12)),
+            Text(
+              'تسجيل الحصة',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+              ),
+            ),
+            Text(
+              'حتى 60 دقيقة',
+              style: TextStyle(color: Color(0xFF90CAF9), fontSize: 12),
+            ),
           ],
         ),
+        leading: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 11),
+        child: CircleAvatar(
+          backgroundColor: Colors.white24,
+          child: Icon(
+            widget.role.icon,
+            color: Colors.white,
+            size: 22,
+          ),
+        ),
+      ),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -253,7 +267,9 @@ class _RecordScreenState extends State<RecordScreen>
               Text(
                 'متبقي: ${_formatTime(_maxSeconds - _elapsedSeconds)}',
                 style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 12),
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                ),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -285,7 +301,9 @@ class _RecordScreenState extends State<RecordScreen>
         ),
         child: const Center(
           child: CircularProgressIndicator(
-              color: AppColors.accent, strokeWidth: 3),
+            color: AppColors.accent,
+            strokeWidth: 3,
+          ),
         ),
       );
     }
@@ -298,8 +316,11 @@ class _RecordScreenState extends State<RecordScreen>
           shape: BoxShape.circle,
           color: AppColors.success.withOpacity(0.1),
         ),
-        child: const Icon(Icons.check_circle_outline_rounded,
-            size: 52, color: AppColors.success),
+        child: const Icon(
+          Icons.check_circle_outline_rounded,
+          size: 52,
+          color: AppColors.success,
+        ),
       );
     }
 
@@ -323,9 +344,7 @@ class _RecordScreenState extends State<RecordScreen>
           ),
         ),
         child: Icon(
-          _step == _Step.recording
-              ? Icons.mic_rounded
-              : Icons.mic_none_rounded,
+          _step == _Step.recording ? Icons.mic_rounded : Icons.mic_none_rounded,
           size: 48,
           color: _step == _Step.recording
               ? AppColors.recording
@@ -338,58 +357,84 @@ class _RecordScreenState extends State<RecordScreen>
   Widget _buildLabel() {
     switch (_step) {
       case _Step.idle:
-        return const Column(children: [
-          Text('اضغط لبدء تسجيل الحصة',
+        return const Column(
+          children: [
+            Text(
+              'اضغط لبدء تسجيل الحصة',
               style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary)),
-          SizedBox(height: 6),
-          Text('سيتم حفظ التسجيل تلقائياً',
-              style:
-                  TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-        ]);
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            SizedBox(height: 6),
+            Text(
+              'سيتم حفظ التسجيل تلقائياً',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+          ],
+        );
 
       case _Step.recording:
-        return Column(children: [
-          Text(
-            _formatTime(_elapsedSeconds),
-            style: const TextStyle(
+        return Column(
+          children: [
+            Text(
+              _formatTime(_elapsedSeconds),
+              style: const TextStyle(
                 fontSize: 52,
                 fontWeight: FontWeight.w800,
                 color: AppColors.recording,
-                letterSpacing: 3),
-          ),
-          const SizedBox(height: 6),
-          const Text('● جاري التسجيل',
-              style: TextStyle(color: AppColors.recording, fontSize: 14)),
-        ]);
+                letterSpacing: 3,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              '● جاري التسجيل',
+              style: TextStyle(color: AppColors.recording, fontSize: 14),
+            ),
+          ],
+        );
 
       case _Step.saving:
-        return const Column(children: [
-          Text('جاري حفظ التسجيل...',
+        return const Column(
+          children: [
+            Text(
+              'جاري حفظ التسجيل...',
               style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary)),
-          SizedBox(height: 6),
-          Text('يرجى الانتظار',
-              style:
-                  TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-        ]);
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            SizedBox(height: 6),
+            Text(
+              'يرجى الانتظار',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+          ],
+        );
 
       case _Step.done:
-        return Column(children: [
-          const Text('تم الحفظ بنجاح',
+        return Column(
+          children: [
+            const Text(
+              'تم الحفظ بنجاح',
               style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.success)),
-          const SizedBox(height: 6),
-          Text('مدة الحصة: ${_formatTime(_elapsedSeconds)}',
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: AppColors.success,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'مدة الحصة: ${_formatTime(_elapsedSeconds)}',
               style: const TextStyle(
-                  fontSize: 13, color: AppColors.textSecondary)),
-        ]);
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        );
     }
   }
 
@@ -434,16 +479,20 @@ class _RecordScreenState extends State<RecordScreen>
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16)),
+            borderRadius: BorderRadius.circular(16),
+          ),
           elevation: 0,
         ),
         onPressed: onPressed,
         icon: Icon(icon, color: Colors.white),
-        label: Text(label,
-            style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 16)),
+        label: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+          ),
+        ),
       ),
     );
   }
@@ -454,8 +503,7 @@ class _RecordScreenState extends State<RecordScreen>
       color: const Color(0xFFF0FFF4),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side:
-            const BorderSide(color: Color(0xFFA5D6A7)),
+        side: const BorderSide(color: Color(0xFFA5D6A7)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -467,13 +515,17 @@ class _RecordScreenState extends State<RecordScreen>
                 Text(
                   _savedTitle ?? '',
                   style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                      color: AppColors.textPrimary),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(Icons.folder_open_rounded,
-                    color: AppColors.success, size: 20),
+                const Icon(
+                  Icons.folder_open_rounded,
+                  color: AppColors.success,
+                  size: 20,
+                ),
               ],
             ),
             const SizedBox(height: 10),
@@ -483,9 +535,10 @@ class _RecordScreenState extends State<RecordScreen>
               'يمكنك الآن الذهاب إلى "السجل" لتحويل التسجيل إلى نص وتوليد الملخص',
               textAlign: TextAlign.right,
               style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
-                  height: 1.5),
+                color: AppColors.textSecondary,
+                fontSize: 13,
+                height: 1.5,
+              ),
             ),
           ],
         ),

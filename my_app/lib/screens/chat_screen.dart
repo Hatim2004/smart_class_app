@@ -198,7 +198,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   AppBar _buildAppBar() {
-    final bool isStudent = widget.role == UserRole.student;
     return AppBar(
       backgroundColor: AppColors.primary,
       elevation: 0,
@@ -220,7 +219,7 @@ class _ChatScreenState extends State<ChatScreen> {
         ],
       ),
       leading: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 25.0),
+        padding: const EdgeInsets.symmetric(horizontal: 11.0),
         child: CircleAvatar(
           backgroundColor: Colors.white24,
           child: Icon(

@@ -138,7 +138,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isStudent = widget.role == UserRole.student;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -163,7 +162,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
         ],
         leading: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 25.0),
+        padding: const EdgeInsets.symmetric(horizontal: 11.0),
         child: CircleAvatar(
           backgroundColor: Colors.white24,
           child: Icon(

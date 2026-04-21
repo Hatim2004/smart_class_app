@@ -24,7 +24,7 @@ class _MainScreenState extends State<MainScreen> {
     // Conditionally load the chat screen based on the role
     final List<Widget> screens = [
       isStudent ?  StudentChatScreen(role: widget.role,) : ChatScreen(role: widget.role),
-      if (!isStudent) RecordScreen(), 
+      if (!isStudent) RecordScreen(role: widget.role), 
       HistoryScreen(role: widget.role),
     ];
 
@@ -51,7 +51,6 @@ class _MainScreenState extends State<MainScreen> {
       _currentIndex = screens.length - 1;
     }
 
-    final String currentTitle = navItems[_currentIndex].label ?? 'مساعد المعلم';
 
     return Scaffold(
       body: IndexedStack(
