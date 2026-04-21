@@ -14,14 +14,27 @@ const String kGeminiApiKey = String.fromEnvironment('GEMINI_API_KEY');
 
 const int kMaxRecordingMinutes = 60;
 
+enum UserRole { student, teacher }
+
+extension UserRoleExtension on UserRole {
+  IconData get icon {
+    switch (this) {
+      case UserRole.student:
+        return Icons.school_rounded;
+      case UserRole.teacher:
+        return Icons.badge_rounded;
+    }
+  }
+}
+
 // ── Color Palette ────────────────────────────────────────────────────────────
 class AppColors {
   AppColors._();
 
-  static const Color primary = Color(0xFF0D47A1);
-  static const Color primaryLight = Color(0xFF1565C0);
+  static const Color primary = Color(0xFF1565C0);
+  static const Color primaryLight = Color(0xFF1E88E5);
   static const Color accent = Color(0xFF00B0FF);
-  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surface = Color(0xFFE6F1FB);
   static const Color background = Color(0xFFF0F4F8);
   static const Color cardBg = Color(0xFFFFFFFF);
   static const Color userBubble = Color(0xFF1565C0);

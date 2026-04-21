@@ -8,7 +8,8 @@ import '../services/storage_service.dart';
 import 'session_detail_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key});
+  final UserRole role;
+  const HistoryScreen({super.key, required this.role});
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -137,6 +138,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isStudent = widget.role == UserRole.student;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -160,6 +162,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
             onPressed: _loadSessions,
           ),
         ],
+        leading: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 25.0),
+        child: CircleAvatar(
+          backgroundColor: Colors.white24,
+          child: Icon(
+            widget.role.icon,
+            color: Colors.white,
+            size: 22,
+          ),
+        ),
+      ),
       ),
       body: _loading
           ? const Center(

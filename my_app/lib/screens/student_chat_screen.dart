@@ -4,35 +4,28 @@ import '../constants.dart';
 import '../models/chat_message.dart';
 import '../services/elevenlabs_service.dart';
 import '../services/ollama_service.dart';
-import '../services/pdf_service.dart';
 import '../widgets/waveform_visualizer.dart';
 
-class ChatScreen extends StatefulWidget {
+class StudentChatScreen extends StatefulWidget {
   final UserRole role;
-  const ChatScreen({super.key, required this.role});
+  const StudentChatScreen({super.key, required this.role});
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  State<StudentChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<StudentChatScreen> {
   final SpeechToText _stt = SpeechToText();
   final ElevenLabsService _tts = ElevenLabsService();
   final OllamaService _ollama = OllamaService();
-  final PdfService _pdfService = PdfService();
   final ScrollController _scrollCtrl = ScrollController();
 
   bool _speechEnabled = false;
   String _currentWords = '';
   bool _isLoading = false;
   bool _isAiSpeaking = false;
-  bool _isLoadingPdf = false;
-
-  // Active PDF context
-  PdfResult? _activePdf;
 
   final List<ChatMessage> _messages = [];
-  
 
   @override
   void initState() {
@@ -49,40 +42,6 @@ class _ChatScreenState extends State<ChatScreen> {
       onError: (_) => setState(() {}),
     );
     setState(() {});
-  }
-
-  // ── PDF ────────────────────────────────────────────────────────────────────
-
-  Future<void> _pickPdf() async {
-    setState(() => _isLoadingPdf = true);
-    try {
-      final result = await _pdfService.pickAndExtract();
-      if (result == null) return; // user cancelled
-
-      setState(() {
-        _activePdf = result;
-        _messages.clear(); // fresh conversation for new PDF
-        _messages.add(
-          ChatMessage(
-            text:
-                '📄 تم تحميل الملف: ${result.fileName}\n\nيمكنك الآن سؤالي عن محتوى هذا الدرس وسأشرحه للطلاب.',
-            isUser: false,
-          ),
-        );
-      });
-      _scrollToBottom();
-    } catch (e) {
-      _showSnack('خطأ في قراءة الملف: $e');
-    } finally {
-      if (mounted) setState(() => _isLoadingPdf = false);
-    }
-  }
-
-  void _clearPdf() {
-    setState(() {
-      _activePdf = null;
-      _messages.clear();
-    });
   }
 
   // ── Speech ─────────────────────────────────────────────────────────────────
@@ -124,10 +83,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
 
     try {
-      final reply = await _ollama.chat(
-        text,
-        pdfContext: _activePdf?.contextFor(),
-      );
+      final reply = await _ollama.chat(text);
       setState(() => _messages.add(ChatMessage(text: reply, isUser: false)));
       _scrollToBottom();
       await _tts.speak(reply);
@@ -154,10 +110,6 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  void _showSnack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-  }
-
   @override
   void dispose() {
     _tts.dispose();
@@ -174,10 +126,6 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: _buildAppBar(),
       body: Column(
         children: [
-          // PDF banner
-          if (_activePdf != null) _buildPdfBanner(),
-
-          // Messages
           Expanded(
             child: _messages.isEmpty
                 ? _buildEmptyState()
@@ -188,8 +136,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     itemBuilder: (_, i) => _buildBubble(_messages[i]),
                   ),
           ),
-
-          // Bottom panel
           _buildBottomPanel(),
         ],
       ),
@@ -203,9 +149,9 @@ class _ChatScreenState extends State<ChatScreen> {
       backgroundColor: AppColors.primary,
       elevation: 0,
       centerTitle: true,
-      title: Column(
+      title: const Column(
         children: [
-          const Text(
+          Text(
             'المساعد الذكي',
             style: TextStyle(
               color: Colors.white,
@@ -214,8 +160,8 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           Text(
-            _activePdf != null ? 'وضع شرح الدرس' : 'اسأل أي سؤال',
-            style: const TextStyle(color: Color(0xFF90CAF9), fontSize: 12),
+            'اسأل أي سؤال',
+            style: TextStyle(color: Color(0xFF90CAF9), fontSize: 12),
           ),
         ],
       ),
@@ -231,34 +177,6 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
       actions: [
-        // PDF upload button
-        if (_isLoadingPdf)
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2,
-              ),
-            ),
-          )
-        else
-          IconButton(
-            icon: Icon(
-              _activePdf != null
-                  ? Icons.picture_as_pdf_rounded
-                  : Icons.upload_file_rounded,
-              color: _activePdf != null
-                  ? const Color(0xFFFFCC02)
-                  : Colors.white,
-            ),
-            tooltip: _activePdf != null ? 'تغيير الملف' : 'رفع ملف PDF',
-            onPressed: _pickPdf,
-          ),
-
-        // Clear conversation
         if (_messages.isNotEmpty)
           IconButton(
             icon: const Icon(
@@ -269,46 +187,6 @@ class _ChatScreenState extends State<ChatScreen> {
             onPressed: () => setState(() => _messages.clear()),
           ),
       ],
-    );
-  }
-
-  Widget _buildPdfBanner() {
-    return Container(
-      width: double.infinity,
-      color: const Color(0xFFFFF8E1),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: _clearPdf,
-            child: const Icon(
-              Icons.close_rounded,
-              size: 18,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              _activePdf!.fileName,
-              textAlign: TextAlign.right,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Icon(
-            Icons.picture_as_pdf_rounded,
-            size: 18,
-            color: Color(0xFFE65100),
-          ),
-        ],
-      ),
     );
   }
 
@@ -339,75 +217,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 color: AppColors.textSecondary,
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // PDF hint card
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF8E1),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFFFE082)),
-              ),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'هل تريد شرح درس؟',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'ارفع ملف PDF للدرس وسيساعدك المساعد في شرح المحتوى للطلاب',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE65100),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                    ),
-                    onPressed: _isLoadingPdf ? null : _pickPdf,
-                    icon: const Icon(
-                      Icons.upload_file_rounded,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    label: const Text(
-                      'رفع PDF',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
           ],

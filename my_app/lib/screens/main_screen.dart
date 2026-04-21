@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
-import 'chat_screen.dart';
+import 'chat_screen.dart'; // Teacher's chat screen
+import 'student_chat_screen.dart'; // Add this import for the new student screen
 import 'record_screen.dart';
 import 'history_screen.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final UserRole role;
+
+  const MainScreen({super.key, required this.role});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -14,19 +17,46 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  // Keep screens alive when switching tabs
-  static const List<Widget> _screens = [
-    ChatScreen(),
-    RecordScreen(),
-    HistoryScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final bool isStudent = widget.role == UserRole.student;
+
+    // Conditionally load the chat screen based on the role
+    final List<Widget> screens = [
+      isStudent ?  StudentChatScreen(role: widget.role,) : ChatScreen(role: widget.role),
+      if (!isStudent) RecordScreen(), 
+      HistoryScreen(role: widget.role),
+    ];
+
+    final List<BottomNavigationBarItem> navItems = [
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.smart_toy_outlined),
+        activeIcon: Icon(Icons.smart_toy_rounded),
+        label: 'المساعد',
+      ),
+      if (!isStudent)
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.fiber_manual_record_outlined),
+          activeIcon: Icon(Icons.fiber_manual_record_rounded),
+          label: 'تسجيل الحصة',
+        ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.history_edu_outlined),
+        activeIcon: Icon(Icons.history_edu_rounded),
+        label: 'السجل',
+      ),
+    ];
+
+    if (_currentIndex >= screens.length) {
+      _currentIndex = screens.length - 1;
+    }
+
+    final String currentTitle = navItems[_currentIndex].label ?? 'مساعد المعلم';
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: screens,
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
@@ -45,27 +75,13 @@ class _MainScreenState extends State<MainScreen> {
           selectedItemColor: AppColors.primary,
           unselectedItemColor: AppColors.textSecondary,
           selectedLabelStyle: const TextStyle(
-              fontWeight: FontWeight.w700, fontSize: 12),
+            fontWeight: FontWeight.w700, 
+            fontSize: 12,
+          ),
           unselectedLabelStyle: const TextStyle(fontSize: 11),
           elevation: 0,
           type: BottomNavigationBarType.fixed,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.smart_toy_outlined),
-              activeIcon: Icon(Icons.smart_toy_rounded),
-              label: 'المساعد',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.fiber_manual_record_outlined),
-              activeIcon: Icon(Icons.fiber_manual_record_rounded),
-              label: 'تسجيل الحصة',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.history_edu_outlined),
-              activeIcon: Icon(Icons.history_edu_rounded),
-              label: 'السجل',
-            ),
-          ],
+          items: navItems,
         ),
       ),
     );
