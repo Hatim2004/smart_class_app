@@ -2,11 +2,10 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import '../constants.dart';
 
 class GeminiService {
-  // Use gemini-1.5-flash for speed/cost or gemini-1.5-pro for complex reasoning
    GenerativeModel _modelInit(String systemInstruction) {
     return GenerativeModel(
-      model: 'gemini-1.5-flash', 
-      apiKey: kGeminiApiKey, // Define this in your constants.dart
+      model: 'gemini-2.5-flash', 
+      apiKey: kGeminiApiKey, 
       systemInstruction: Content.system(systemInstruction),
     );
   }

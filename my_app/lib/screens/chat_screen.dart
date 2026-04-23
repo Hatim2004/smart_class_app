@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:smart_class/services/gemini_service.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../constants.dart';
 import '../models/chat_message.dart';
 import '../services/elevenlabs_service.dart';
-import '../services/ollama_service.dart';
 import '../services/pdf_service.dart';
 import '../widgets/waveform_visualizer.dart';
 
@@ -18,7 +18,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final SpeechToText _stt = SpeechToText();
   final ElevenLabsService _tts = ElevenLabsService();
-  final OllamaService _ollama = OllamaService();
+  final GeminiService _gemini = GeminiService();
   final PdfService _pdfService = PdfService();
   final ScrollController _scrollCtrl = ScrollController();
 
@@ -124,7 +124,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
 
     try {
-      final reply = await _ollama.chat(
+      final reply = await _gemini.chat(
         text,
         pdfContext: _activePdf?.contextFor(),
       );

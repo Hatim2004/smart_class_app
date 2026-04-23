@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../constants.dart';
 import '../models/class_session.dart';
-import '../services/ollama_service.dart';
+import '../services/gemini_service.dart';
 import '../services/recording_service.dart';
 import '../services/storage_service.dart';
 import 'session_detail_screen.dart';
@@ -18,7 +18,7 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen> {
   final StorageService _storage = StorageService();
   final RecordingService _recorder = RecordingService();
-  final OllamaService _ollama = OllamaService();
+  final GeminiService _gemini = GeminiService();
 
   List<ClassSession> _sessions = [];
   bool _loading = true;
@@ -88,7 +88,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     });
 
     try {
-      final summary = await _ollama.summarizeTranscript(session.transcript);
+      final summary = await _gemini.summarizeTranscript(session.transcript);
       final updated = session.copyWith(summary: summary);
       await _storage.updateSession(updated);
       await _loadSessions();
