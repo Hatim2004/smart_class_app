@@ -188,51 +188,6 @@ class _RecordScreenState extends State<RecordScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        elevation: 0,
-        centerTitle: true,
-        title: const Column(
-          children: [
-            Text(
-              'تسجيل الحصة',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-              ),
-            ),
-            Text(
-              'حتى 60 دقيقة',
-              style: TextStyle(color: Color(0xFF90CAF9), fontSize: 12),
-            ),
-          ],
-        ),
-          leading: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 11.0),
-        child: GestureDetector(
-          onTap: () {
-            // Fetch the currently logged-in user from Firebase
-            final currentUser = FirebaseAuth.instance.currentUser;
-            final email = currentUser?.email ?? 'لا يوجد بريد إلكتروني';
-
-            // Display the email to the user
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('الحساب الحالي: $email'),
-                behavior: SnackBarBehavior.floating,
-                backgroundColor: AppColors.accent,
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          },
-          child: CircleAvatar(
-            backgroundColor: Colors.white24,
-            child: Icon(widget.role.icon, color: Colors.white, size: 22),
-          ),
-        ),
-      ),
-      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),

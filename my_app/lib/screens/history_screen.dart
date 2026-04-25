@@ -6,18 +6,16 @@ import '../services/gemini_service.dart';
 import '../services/recording_service.dart';
 import '../services/storage_service.dart';
 import 'session_detail_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-
 
 class HistoryScreen extends StatefulWidget {
   final UserRole role;
   const HistoryScreen({super.key, required this.role});
 
   @override
-  State<HistoryScreen> createState() => _HistoryScreenState();
+  State<HistoryScreen> createState() => HistoryScreenState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen> {
+class HistoryScreenState extends State<HistoryScreen> {
   final StorageService _storage = StorageService();
   final RecordingService _recorder = RecordingService();
   final GeminiService _gemini = GeminiService();
@@ -32,10 +30,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSessions();
+    loadSessions();
   }
 
-  Future<void> _loadSessions() async {
+  Future<void> loadSessions() async {
     setState(() => _loading = true);
     final sessions = await _storage.loadSessions();
     setState(() {
@@ -67,8 +65,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
       final updated = session.copyWith(transcript: transcript);
       await _storage.updateSession(updated);
-      await _loadSessions();
-      _showSnack('✅ تم تحويل التسجيل إلى نص');
+      await loadSessions();
+      _showSnack(' تم تحويل التسجيل إلى نص');
     } catch (e) {
       _showSnack('خطأ: $e');
     } finally {
@@ -93,8 +91,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       final summary = await _gemini.summarizeTranscript(session.transcript);
       final updated = session.copyWith(summary: summary);
       await _storage.updateSession(updated);
-      await _loadSessions();
-      _showSnack('✅ تم توليد الملخص');
+      await loadSessions();
+      _showSnack(' تم توليد الملخص');
     } catch (e) {
       _showSnack('خطأ في الاتصال بالخادم: $e');
     } finally {
@@ -109,31 +107,33 @@ class _HistoryScreenState extends State<HistoryScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('حذف الحصة', textAlign: TextAlign.right),
-        content: Text('هل تريد حذف "${session.title}"؟',
-            textAlign: TextAlign.right),
+        content: Text(
+          'هل تريد حذف "${session.title}"؟',
+          textAlign: TextAlign.right,
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('إلغاء'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.recording),
+              backgroundColor: AppColors.recording,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
-            child:
-                const Text('حذف', style: TextStyle(color: Colors.white)),
+            child: const Text('حذف', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
     if (confirmed == true) {
       await _storage.deleteSession(session.id);
-      _loadSessions();
+      loadSessions();
     }
   }
 
   void _showSnack(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   // ── UI ─────────────────────────────────────────────────────────────────────
@@ -142,67 +142,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        elevation: 0,
-        centerTitle: true,
-        title: const Column(
-          children: [
-            Text('سجل الحصص',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18)),
-            Text('جميع الحصص المسجلة',
-                style: TextStyle(color: Color(0xFF90CAF9), fontSize: 12)),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            onPressed: _loadSessions,
-          ),
-        ],
-          leading: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 11.0),
-        child: GestureDetector(
-          onTap: () {
-            // Fetch the currently logged-in user from Firebase
-            final currentUser = FirebaseAuth.instance.currentUser;
-            final email = currentUser?.email ?? 'لا يوجد بريد إلكتروني';
 
-            // Display the email to the user
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('الحساب الحالي: $email'),
-                behavior: SnackBarBehavior.floating,
-                backgroundColor: AppColors.accent,
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          },
-          child: CircleAvatar(
-            backgroundColor: Colors.white24,
-            child: Icon(widget.role.icon, color: Colors.white, size: 22),
-          ),
-        ),
-      ),
-      ),
       body: _loading
           ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary))
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
           : _sessions.isEmpty
-              ? _buildEmpty()
-              : RefreshIndicator(
-                  onRefresh: _loadSessions,
-                  color: AppColors.primary,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _sessions.length,
-                    itemBuilder: (_, i) =>
-                        _buildCard(_sessions[i]),
-                  ),
-                ),
+          ? _buildEmpty()
+          : RefreshIndicator(
+              onRefresh: loadSessions,
+              color: AppColors.primary,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _sessions.length,
+                itemBuilder: (_, i) => _buildCard(_sessions[i]),
+              ),
+            ),
     );
   }
 
@@ -211,18 +166,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.history_edu_rounded,
-              size: 64, color: AppColors.divider),
+          Icon(Icons.history_edu_rounded, size: 64, color: AppColors.divider),
           SizedBox(height: 16),
-          Text('لا توجد حصص مسجلة',
-              style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500)),
+          Text(
+            'لا توجد حصص مسجلة',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           SizedBox(height: 6),
-          Text('سجّل حصة من تبويب التسجيل',
-              style:
-                  TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+          Text(
+            'سجّل حصة من تبويب التسجيل',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          ),
         ],
       ),
     );
@@ -230,27 +188,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildCard(ClassSession session) {
     final isProcessing = _processingId == session.id;
-    final dateStr =
-        DateFormat('d MMM y، hh:mm a', 'ar').format(session.date);
+    final dateStr = DateFormat('d MMM y، hh:mm a', 'ar').format(session.date);
 
     return Card(
       elevation: 1.5,
       margin: const EdgeInsets.only(bottom: 14),
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Column(
         children: [
           // ── Header ──────────────────────────────────────────────────
           InkWell(
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(18)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
             onTap: session.hasTranscript
                 ? () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) =>
-                              SessionDetailScreen(session: session)),
-                    ).then((_) => _loadSessions())
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SessionDetailScreen(session: session),
+                    ),
+                  ).then((_) => loadSessions())
                 : null,
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -258,10 +213,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 children: [
                   // Delete button on left
                   IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded,
-                        color: AppColors.textSecondary, size: 20),
-                    onPressed:
-                        isProcessing ? null : () => _delete(session),
+                    icon: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: AppColors.textSecondary,
+                      size: 20,
+                    ),
+                    onPressed: isProcessing ? null : () => _delete(session),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
@@ -270,20 +227,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(session.title,
-                            textAlign: TextAlign.right,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
-                                color: AppColors.textPrimary)),
+                        Text(
+                          session.title,
+                          textAlign: TextAlign.right,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
                         const SizedBox(height: 3),
-                        Text(dateStr,
-                            textAlign: TextAlign.right,
-                            style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 12)),
+                        Text(
+                          dateStr,
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -301,13 +264,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       session.hasSummary
                           ? Icons.auto_awesome_rounded
                           : session.hasTranscript
-                              ? Icons.text_fields_rounded
-                              : Icons.mic_rounded,
+                          ? Icons.text_fields_rounded
+                          : Icons.mic_rounded,
                       color: session.hasSummary
                           ? AppColors.accent
                           : session.hasTranscript
-                              ? AppColors.success
-                              : AppColors.primary,
+                          ? AppColors.success
+                          : AppColors.primary,
                       size: 22,
                     ),
                   ),
@@ -321,22 +284,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
             Container(
               width: double.infinity,
               color: AppColors.accent.withOpacity(0.06),
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text(_processingStatus,
-                      style: const TextStyle(
-                          color: AppColors.accent,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500)),
+                  Text(
+                    _processingStatus,
+                    style: const TextStyle(
+                      color: AppColors.accent,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                   const SizedBox(width: 10),
                   const SizedBox(
                     width: 14,
                     height: 14,
                     child: CircularProgressIndicator(
-                        color: AppColors.accent, strokeWidth: 2),
+                      color: AppColors.accent,
+                      strokeWidth: 2,
+                    ),
                   ),
                 ],
               ),
@@ -344,8 +311,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
           // ── Status chips + action buttons ────────────────────────────
           Padding(
-            padding:
-                const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             child: Column(
               children: [
                 // Chips row
@@ -353,19 +319,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     if (session.hasSummary)
-                      _chip(Icons.auto_awesome_rounded, 'يوجد ملخص',
-                          AppColors.accent),
+                      _chip(
+                        Icons.auto_awesome_rounded,
+                        'يوجد ملخص',
+                        AppColors.accent,
+                      ),
                     if (session.hasTranscript) ...[
-                      if (session.hasSummary)
-                        const SizedBox(width: 6),
-                      _chip(Icons.text_fields_rounded, 'يوجد نص',
-                          AppColors.success),
+                      if (session.hasSummary) const SizedBox(width: 6),
+                      _chip(
+                        Icons.text_fields_rounded,
+                        'يوجد نص',
+                        AppColors.success,
+                      ),
                     ],
                     if (session.hasAudio) ...[
-                      if (session.hasTranscript)
-                        const SizedBox(width: 6),
-                      _chip(Icons.mic_rounded, session.formattedDuration,
-                          AppColors.primary),
+                      if (session.hasTranscript) const SizedBox(width: 6),
+                      _chip(
+                        Icons.mic_rounded,
+                        session.formattedDuration,
+                        AppColors.primary,
+                      ),
                     ],
                   ],
                 ),
@@ -385,14 +358,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             onPressed: () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (_) => SessionDetailScreen(
-                                      session: session)),
-                            ).then((_) => _loadSessions()),
+                                builder: (_) =>
+                                    SessionDetailScreen(session: session),
+                              ),
+                            ).then((_) => loadSessions()),
                           ),
                         ),
 
-                      if (session.hasTranscript)
-                        const SizedBox(width: 8),
+                      if (session.hasTranscript) const SizedBox(width: 8),
 
                       // Transcribe button
                       if (!session.hasTranscript)
@@ -405,8 +378,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ),
                         ),
 
-                      if (session.hasTranscript &&
-                          !session.hasSummary) ...[
+                      if (session.hasTranscript && !session.hasSummary) ...[
                         Expanded(
                           child: _actionBtn(
                             label: 'توليد ملخص',
@@ -436,8 +408,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label,
-              style: TextStyle(color: color, fontSize: 11)),
+          Text(label, style: TextStyle(color: color, fontSize: 11)),
           const SizedBox(width: 4),
           Icon(icon, size: 11, color: color),
         ],
@@ -457,18 +428,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10)),
+            borderRadius: BorderRadius.circular(10),
+          ),
           elevation: 0,
-          padding:
-              const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
         ),
         onPressed: onPressed,
         icon: Icon(icon, color: Colors.white, size: 15),
-        label: Text(label,
-            style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600)),
+        label: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }

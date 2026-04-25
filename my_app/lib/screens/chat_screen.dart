@@ -171,7 +171,6 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: _buildAppBar(),
       body: Column(
         children: [
           // PDF banner
@@ -197,92 +196,8 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  AppBar _buildAppBar() {
-    return AppBar(
-      backgroundColor: AppColors.primary,
-      elevation: 0,
-      centerTitle: true,
-      title: Column(
-        children: [
-          const Text(
-            'المساعد الذكي',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 18,
-            ),
-          ),
-          Text(
-            _activePdf != null ? 'وضع شرح الدرس' : 'اسأل أي سؤال',
-            style: const TextStyle(color: Color(0xFF90CAF9), fontSize: 12),
-          ),
-        ],
-      ),
-      leading: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 11.0),
-        child: GestureDetector(
-          onTap: () {
-            // Fetch the currently logged-in user from Firebase
-            final currentUser = FirebaseAuth.instance.currentUser;
-            final email = currentUser?.email ?? 'لا يوجد بريد إلكتروني';
+  
 
-            // Display the email to the user
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('الحساب الحالي: $email'),
-                behavior: SnackBarBehavior.floating,
-                backgroundColor: AppColors.accent,
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          },
-          child: CircleAvatar(
-            backgroundColor: Colors.white24,
-            child: Icon(widget.role.icon, color: Colors.white, size: 22),
-          ),
-        ),
-      ),
-      actions: [
-        // PDF upload button
-        if (_isLoadingPdf)
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2,
-              ),
-            ),
-          )
-        else
-          IconButton(
-            icon: Icon(
-              _activePdf != null
-                  ? Icons.picture_as_pdf_rounded
-                  : Icons.upload_file_rounded,
-              color: _activePdf != null
-                  ? const Color(0xFFFFCC02)
-                  : Colors.white,
-            ),
-            tooltip: _activePdf != null ? 'تغيير الملف' : 'رفع ملف PDF',
-            onPressed: _pickPdf,
-          ),
-
-        // Clear conversation
-        if (_messages.isNotEmpty)
-          IconButton(
-            icon: const Icon(
-              Icons.delete_sweep_outlined,
-              color: Colors.white70,
-            ),
-            tooltip: 'مسح المحادثة',
-            onPressed: () => setState(() => _messages.clear()),
-          ),
-      ],
-    );
-  }
 
   Widget _buildPdfBanner() {
     return Container(

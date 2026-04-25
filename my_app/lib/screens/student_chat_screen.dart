@@ -5,12 +5,16 @@ import '../models/chat_message.dart';
 import '../services/elevenlabs_service.dart';
 import '../services/gemini_service.dart';
 import '../widgets/waveform_visualizer.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-
 
 class StudentChatScreen extends StatefulWidget {
   final UserRole role;
-  const StudentChatScreen({super.key, required this.role});
+  final String userName;
+
+  const StudentChatScreen({
+    super.key,
+    required this.role,
+    required this.userName,
+  });
 
   @override
   State<StudentChatScreen> createState() => _ChatScreenState();
@@ -21,7 +25,6 @@ class _ChatScreenState extends State<StudentChatScreen> {
   final ElevenLabsService _tts = ElevenLabsService();
   final ScrollController _scrollCtrl = ScrollController();
   final GeminiService _gemini = GeminiService();
-
 
   bool _speechEnabled = false;
   String _currentWords = '';
@@ -126,7 +129,6 @@ class _ChatScreenState extends State<StudentChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: _buildAppBar(),
       body: Column(
         children: [
           Expanded(
@@ -146,64 +148,7 @@ class _ChatScreenState extends State<StudentChatScreen> {
     );
   }
 
-  AppBar _buildAppBar() {
-    return AppBar(
-      backgroundColor: AppColors.primary,
-      elevation: 0,
-      centerTitle: true,
-      title: const Column(
-        children: [
-          Text(
-            'المساعد الذكي',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 18,
-            ),
-          ),
-          Text(
-            'اسأل أي سؤال',
-            style: TextStyle(color: Color(0xFF90CAF9), fontSize: 12),
-          ),
-        ],
-      ),
-         leading: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 11.0),
-        child: GestureDetector(
-          onTap: () {
-            // Fetch the currently logged-in user from Firebase
-            final currentUser = FirebaseAuth.instance.currentUser;
-            final email = currentUser?.email ?? 'لا يوجد بريد إلكتروني';
-
-            // Display the email to the user
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('الحساب الحالي: $email'),
-                behavior: SnackBarBehavior.floating,
-                backgroundColor: AppColors.accent,
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          },
-          child: CircleAvatar(
-            backgroundColor: Colors.white24,
-            child: Icon(widget.role.icon, color: Colors.white, size: 22),
-          ),
-        ),
-      ),
-      actions: [
-        if (_messages.isNotEmpty)
-          IconButton(
-            icon: const Icon(
-              Icons.delete_sweep_outlined,
-              color: Colors.white70,
-            ),
-            tooltip: 'مسح المحادثة',
-            onPressed: () => setState(() => _messages.clear()),
-          ),
-      ],
-    );
-  }
+ 
 
   Widget _buildEmptyState() {
     return Center(
