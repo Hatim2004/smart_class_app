@@ -67,53 +67,47 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // --- STRICT GOOGLE SIGN IN (NO REGISTRATION) ---
   Future<void> _handleGoogleSignIn() async {
-    setState(() => _isLoading = true);
+  setState(() => _isLoading = true);
 
-    try {
-      await GoogleSignIn.instance.initialize();
-      final GoogleSignInAccount? googleUser = await GoogleSignIn.instance
-          .authenticate();
+  try {
+    await GoogleSignIn.instance.initialize();
+    final GoogleSignInAccount? googleUser = await GoogleSignIn.instance.authenticate();
 
-      if (googleUser == null) {
-        setState(() => _isLoading = false);
-        return;
-      }
-
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-      );
-
-      UserCredential userCredential = await FirebaseAuth.instance
-          .signInWithCredential(credential);
-      final uid = userCredential.user!.uid;
-
-      // Check if this user exists in your Firestore database
-      DocumentReference userDocRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid);
-      DocumentSnapshot userDoc = await userDocRef.get();
-
-      // IF THEY DO NOT EXIST: Create their profile instead of deleting them
-      if (!userDoc.exists) {
-        await userDocRef.set({
-          'name': userCredential.user!.displayName ?? 'مستخدم جديد',
-          'email': userCredential.user!.email,
-          'role': 'student', // Assigning default role
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-      }
-
-      // Route them normally
-      await _routeUser(uid);
-    } catch (e) {
-      print("Google Auth Error: $e"); // Helpful for debugging in terminal
-      _showError('حدث خطأ أثناء التحقق من حساب Google');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    if (googleUser == null) {
+      setState(() => _isLoading = false);
+      return;
     }
+
+    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+    final credential = GoogleAuthProvider.credential(idToken: googleAuth.idToken);
+
+    UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+    final uid = userCredential.user!.uid;
+
+    final DocumentReference userDocRef = FirebaseFirestore.instance.collection('users').doc(uid);
+    final DocumentSnapshot userDoc = await userDocRef.get();
+
+    if (!userDoc.exists) {
+      // Write the doc and WAIT for server confirmation before proceeding
+      await userDocRef.set({
+        'name': userCredential.user!.displayName ?? 'مستخدم جديد',
+        'email': userCredential.user!.email,
+        'role': 'student',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      //  Re-fetch to confirm the doc is live before AuthWrapper sees it
+      await userDocRef.get();
+    }
+
+    await _routeUser(uid);
+  } catch (e) {
+    print("Google Auth Error: $e");
+    _showError('حدث خطأ أثناء التحقق من حساب Google');
+  } finally {
+    if (mounted) setState(() => _isLoading = false);
   }
+}
 
   Future<void> _handleEmailSignUp() async {
     final email = _emailController.text.trim();

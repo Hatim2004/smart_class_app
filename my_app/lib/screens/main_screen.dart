@@ -154,8 +154,8 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.home_rounded, color: AppColors.textSecondary),
-              title: const Text('الصفحة الرئيسية'),
+              leading: const Icon(Icons.smart_toy, color: AppColors.textSecondary),
+              title: const Text('المساعد'),
               onTap: () {
                 Navigator.pop(context); 
                 setState(() => _currentIndex = 0); 

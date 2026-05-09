@@ -11,11 +11,9 @@ class AuthWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
-      // 1. Listen to Firebase Authentication state changes
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, authSnapshot) {
-        
-        // Show a loading spinner while checking the device cache
+
         if (authSnapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             backgroundColor: AppColors.background,
@@ -23,17 +21,17 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
-        // 2. If the user is NOT logged in, show the Login Screen
         if (!authSnapshot.hasData || authSnapshot.data == null) {
           return const LoginScreen();
         }
 
-        // 3. If the user IS logged in, fetch their specific data from Firestore
         return FutureBuilder<DocumentSnapshot>(
-          future: FirebaseFirestore.instance.collection('users').doc(authSnapshot.data!.uid).get(),
+          future: FirebaseFirestore.instance
+              .collection('users')
+              .doc(authSnapshot.data!.uid)
+              .get(),
           builder: (context, userSnapshot) {
-            
-            // Show a loading spinner while talking to the database
+
             if (userSnapshot.connectionState == ConnectionState.waiting) {
               return const Scaffold(
                 backgroundColor: AppColors.background,
@@ -41,21 +39,44 @@ class AuthWrapper extends StatelessWidget {
               );
             }
 
-            // 4. If the database profile exists, extract the data and route them to MainScreen
             if (userSnapshot.hasData && userSnapshot.data!.exists) {
               final data = userSnapshot.data!.data() as Map<String, dynamic>;
-              
               String roleString = data['role'] ?? 'student';
               UserRole role = roleString == 'teacher' ? UserRole.teacher : UserRole.student;
               String userName = data.containsKey('name') ? data['name'] : 'مستخدم';
-
               return MainScreen(role: role, userName: userName);
             }
 
-            // 5. Fallback: If they are logged into Auth but have no database profile, 
-            // force a logout and send them back to the login screen.
-            FirebaseAuth.instance.signOut();
-            return const LoginScreen();
+            // ✅ REPLACE THE OLD CASE 5 WITH THIS
+            return FutureBuilder(
+              future: Future.delayed(
+                const Duration(seconds: 2),
+                () => FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(authSnapshot.data!.uid)
+                    .get(),
+              ),
+              builder: (context, retrySnapshot) {
+                if (retrySnapshot.connectionState == ConnectionState.waiting) {
+                  return const Scaffold(
+                    backgroundColor: AppColors.background,
+                    body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                  );
+                }
+
+                if (retrySnapshot.hasData && retrySnapshot.data!.exists) {
+                  final data = retrySnapshot.data!.data() as Map<String, dynamic>;
+                  String roleString = data['role'] ?? 'student';
+                  UserRole role = roleString == 'teacher' ? UserRole.teacher : UserRole.student;
+                  String userName = data.containsKey('name') ? data['name'] : 'مستخدم';
+                  return MainScreen(role: role, userName: userName);
+                }
+
+                // Only sign out if STILL not found after retry
+                FirebaseAuth.instance.signOut();
+                return const LoginScreen();
+              },
+            );
           },
         );
       },

@@ -25,6 +25,7 @@ class _ChatScreenState extends State<StudentChatScreen> {
   final ElevenLabsService _tts = ElevenLabsService();
   final ScrollController _scrollCtrl = ScrollController();
   final GeminiService _gemini = GeminiService();
+  final TextEditingController _textController = TextEditingController();
 
   bool _speechEnabled = false;
   String _currentWords = '';
@@ -118,9 +119,18 @@ class _ChatScreenState extends State<StudentChatScreen> {
 
   @override
   void dispose() {
+    _textController.dispose();
     _tts.dispose();
     _scrollCtrl.dispose();
     super.dispose();
+  }
+
+  void _handleTextSubmit() {
+    final text = _textController.text;
+    if (text.trim().isNotEmpty) {
+      _send(text);
+      _textController.clear();
+    }
   }
 
   // ── UI ─────────────────────────────────────────────────────────────────────
@@ -144,7 +154,7 @@ class _ChatScreenState extends State<StudentChatScreen> {
           _buildBottomPanel(),
         ],
       ),
-      floatingActionButton: _buildMicButton(),
+      
     );
   }
 
@@ -223,8 +233,9 @@ class _ChatScreenState extends State<StudentChatScreen> {
       ),
     );
   }
+Widget _buildBottomPanel() {
+    final listening = _stt.isListening;
 
-  Widget _buildBottomPanel() {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.surface,
@@ -236,62 +247,97 @@ class _ChatScreenState extends State<StudentChatScreen> {
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      // Adjusted padding to account for the safe area at the bottom of the screen
+      padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            height: 52,
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary,
-                      strokeWidth: 2.5,
+          // Waveform and Speech-to-Text preview
+          if (_isLoading || _isAiSpeaking || listening || _currentWords.isNotEmpty) ...[
+            SizedBox(
+              height: 40,
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  : WaveformVisualizer(
+                      isActive: _isAiSpeaking || listening,
+                      activeColor: listening ? AppColors.recording : AppColors.accent,
                     ),
-                  )
-                : WaveformVisualizer(
-                    isActive: _isAiSpeaking || _stt.isListening,
-                    activeColor: _stt.isListening
-                        ? AppColors.recording
-                        : AppColors.accent,
+            ),
+            if (_currentWords.isNotEmpty && !_isLoading)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Text(
+                  _currentWords,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                    fontStyle: FontStyle.italic,
                   ),
-          ),
-          if (_currentWords.isNotEmpty && !_isLoading)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 6, 24, 0),
-              child: Text(
-                _currentWords,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
-                  fontStyle: FontStyle.italic,
                 ),
               ),
-            ),
-          const SizedBox(height: 70),
-        ],
-      ),
-    );
-  }
+          ],
 
-  Widget _buildMicButton() {
-    final listening = _stt.isListening;
-    return FloatingActionButton.extended(
-      onPressed: !_speechEnabled || _isLoading
-          ? null
-          : (listening ? _stopListening : _startListening),
-      backgroundColor: listening ? AppColors.recording : AppColors.primary,
-      icon: Icon(
-        listening ? Icons.stop_rounded : Icons.mic_rounded,
-        color: Colors.white,
-      ),
-      label: Text(
-        listening ? 'إيقاف' : 'تحدث',
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-        ),
+          // Text Input Row
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _textController,
+                  enabled: !_isLoading,
+                  textDirection: TextDirection.rtl, // Aligns Arabic text correctly
+                  decoration: InputDecoration(
+                    hintText: 'اكتب رسالتك...',
+                    hintTextDirection: TextDirection.rtl,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: const BorderSide(color: Colors.grey),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: const BorderSide(color: AppColors.primary),
+                    ),
+                  ),
+                  onSubmitted: (_) => _handleTextSubmit(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              
+              // Send Button
+              CircleAvatar(
+                backgroundColor: AppColors.primary.withOpacity(0.1),
+                child: IconButton(
+                  icon: const Icon(Icons.send_rounded, size: 20),
+                  color: AppColors.primary,
+                  onPressed: _isLoading ? null : _handleTextSubmit,
+                ),
+              ),
+              const SizedBox(width: 8),
+              
+              // Inline Mic Button
+              GestureDetector(
+                onTap: !_speechEnabled || _isLoading
+                    ? null
+                    : (listening ? _stopListening : _startListening),
+                child: CircleAvatar(
+                  radius: 24,
+                  backgroundColor: listening ? AppColors.recording : AppColors.primary,
+                  child: Icon(
+                    listening ? Icons.stop_rounded : Icons.mic_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
